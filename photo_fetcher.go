@@ -10,8 +10,6 @@ type PhotoFetcher struct {
 	image_urls []string
 }
 
-var wg sync.WaitGroup
-
 func New(urls []string) (f *PhotoFetcher) {
 	f = new(PhotoFetcher)
 	f.image_urls = urls
@@ -22,10 +20,12 @@ func New(urls []string) (f *PhotoFetcher) {
 func (f *PhotoFetcher) Run() []image.Image {
 	images := make([]image.Image, len(f.image_urls))
 
+	var wg sync.WaitGroup
+
 	for index, url := range f.image_urls {
 		wg.Add(1)
 
-		go downloadImage(url, index, images)
+		go downloadImage(url, index, images, &wg)
 	}
 
 	wg.Wait()
@@ -33,7 +33,7 @@ func (f *PhotoFetcher) Run() []image.Image {
 	return images
 }
 
-func downloadImage(url string, index int, images []image.Image) {
+func downloadImage(url string, index int, images []image.Image, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	res, _ := http.Get(url)
